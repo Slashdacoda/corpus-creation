@@ -14,7 +14,10 @@ class ssoarMetaFileFormatter:
         
     def formatMetadata(self):
         for filename in os.listdir(self.rootDir):
+            #print " F: " + filename
             for recordId, recordMetadata in self.parseMetadata(os.path.join(self.rootDir, filename)):
+                #print " Rid: " + recordId
+                #print " 2F: " + filename
                 self.writeToFile(recordId, recordMetadata)
     
     def getRootElements(self, root):
@@ -22,6 +25,8 @@ class ssoarMetaFileFormatter:
         
     def writeToFile(self, recordId, recordMetadata):
         towrite = ElementTree.ElementTree(recordMetadata)
+        print " self.targetDir: " + self.targetDir
+        print " recordId: " + recordId
         towrite.write(os.path.join(self.targetDir, recordId + ".xml"), "utf-8")
         self.counter += 1
         print "wrote %s (file no. %d)." %(os.path.join(self.targetDir, recordId + ".xml"), self.counter)
@@ -38,10 +43,13 @@ class ssoarMetaFileFormatter:
                                 for dcElement in part.getchildren():
                                     for dcValue in dcElement.getchildren():
                                         if dcValue.get("qualifier") == "uri":
-                                            recordId = dcValue.text.replace("http://www.ssoar.info/ssoar/handle/document/", "")
-                                            yield recordId, attribute
-        except:
-            print "Caught error in filename %s." %filename
+                                            if "handle" in dcValue.text:
+                                                recordId = dcValue.text.replace("http://www.ssoar.info/ssoar/handle/document/", "")
+                                                recordId = recordId.replace("https://www.ssoar.info/ssoar/handle/document/", "")
+                                                yield recordId, attribute
+        except Exception as ee:
+            print "Caught error in filename " + filename
+            print " E: " + str(ee)
 
 def usage():
     print "usage: ssoarMetaFileFormatter.py <inputDir> <outputDir>"
@@ -52,6 +60,7 @@ if __name__=="__main__":
         outputDir = sys.argv[2]
         formatter = ssoarMetaFileFormatter(inputDir, outputDir)
         formatter.formatMetadata()
-    except:
-        usage()
+    except Exception as e:
+	usage()
+	print " E: " + str(e)
     
